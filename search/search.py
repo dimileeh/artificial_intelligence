@@ -7,7 +7,7 @@
 # For more info, see http://inst.eecs.berkeley.edu/~cs188/sp09/pacman.html
 
 """
-In search.py, you will implement generic search algorithms which are called 
+In search.py, you will implement generic search algorithms which are called
 by Pacman agents (in searchAgents.py).
 """
 
@@ -17,20 +17,20 @@ class SearchProblem:
   """
   This class outlines the structure of a search problem, but doesn't implement
   any of the methods (in object-oriented terminology: an abstract class).
-  
+
   You do not need to change anything in this class, ever.
   """
-  
+
   def getStartState(self):
      """
-     Returns the start state for the search problem 
+     Returns the start state for the search problem
      """
      util.raiseNotDefined()
-    
+
   def isGoalState(self, state):
      """
        state: Search state
-    
+
      Returns True if and only if the state is a valid goal state
      """
      util.raiseNotDefined()
@@ -38,11 +38,11 @@ class SearchProblem:
   def getSuccessors(self, state):
      """
        state: Search state
-     
-     For a given state, this should return a list of triples, 
-     (successor, action, stepCost), where 'successor' is a 
+
+     For a given state, this should return a list of triples,
+     (successor, action, stepCost), where 'successor' is a
      successor to the current state, 'action' is the action
-     required to get there, and 'stepCost' is the incremental 
+     required to get there, and 'stepCost' is the incremental
      cost of expanding to that successor
      """
      util.raiseNotDefined()
@@ -50,12 +50,12 @@ class SearchProblem:
   def getCostOfActions(self, actions):
      """
       actions: A list of actions to take
- 
+
      This method returns the total cost of a particular sequence of actions.  The sequence must
      be composed of legal moves
      """
      util.raiseNotDefined()
-           
+
 
 def tinyMazeSearch(problem):
   """
@@ -67,24 +67,58 @@ def tinyMazeSearch(problem):
   w = Directions.WEST
   return  [s,s,w,s,w,w,s,w]
 
+from copy import deepcopy
+
+def treeSearch(problem, atype):
+  visited = []
+  frontier = util.PriorityQueue()
+
+  state = (problem.getStartState(), "NONE", 0)
+
+  path = [state]
+
+  def cost(path, atype):
+      if atype == "dfs":
+          cost = 1. / len(path)
+      elif atype == "bfs":
+          cost = len(path)
+      return cost
+
+  frontier.push(path, cost(path, atype))
+  while frontier.isEmpty() == False:
+      p = frontier.pop()
+      s = p[-1]
+      visited.append(s[0])
+      if problem.isGoalState(s[0]):
+          return [d for s, d, w in p if d != "NONE"]
+      for a in problem.getSuccessors(s[0]):
+          if a[0] not in visited:
+              np = p + [a]
+              frontier.push(np, cost(np, atype))
+  return None
+
 def depthFirstSearch(problem):
   """
   Search the deepest nodes in the search tree first
   [2nd Edition: p 75, 3rd Edition: p 87]
-  
+
   Your search algorithm needs to return a list of actions that reaches
-  the goal.  Make sure to implement a graph search algorithm 
+  the goal.  Make sure to implement a graph search algorithm
   [2nd Edition: Fig. 3.18, 3rd Edition: Fig 3.7].
-  
+
   To get started, you might want to try some of these simple commands to
   understand the search problem that is being passed in:
-  
+
   print "Start:", problem.getStartState()
   print "Is the start a goal?", problem.isGoalState(problem.getStartState())
   print "Start's successors:", problem.getSuccessors(problem.getStartState())
   """
   "*** YOUR CODE HERE ***"
-  util.raiseNotDefined()
+  print "Start:", problem.getStartState()
+  print "Is the start a goal?", problem.isGoalState(problem.getStartState())
+  print "Start's successors:", problem.getSuccessors(problem.getStartState())
+
+  return treeSearch(problem, "dfs")
 
 def breadthFirstSearch(problem):
   """
@@ -92,8 +126,8 @@ def breadthFirstSearch(problem):
   [2nd Edition: p 73, 3rd Edition: p 82]
   """
   "*** YOUR CODE HERE ***"
-  util.raiseNotDefined()
-      
+  return treeSearch(problem, "bfs")
+
 def uniformCostSearch(problem):
   "Search the node of least total cost first. "
   "*** YOUR CODE HERE ***"
@@ -110,8 +144,8 @@ def aStarSearch(problem, heuristic=nullHeuristic):
   "Search the node that has the lowest combined cost and heuristic first."
   "*** YOUR CODE HERE ***"
   util.raiseNotDefined()
-    
-  
+
+
 # Abbreviations
 bfs = breadthFirstSearch
 dfs = depthFirstSearch
