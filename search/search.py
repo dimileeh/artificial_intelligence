@@ -69,30 +69,42 @@ def tinyMazeSearch(problem):
 
 from copy import deepcopy
 
-def treeSearch(problem, atype):
-  visited = []
+def treeSearch(problem, atype, heuristic=None):
   frontier = util.PriorityQueue()
+  startTriple = (problem.getStartState(), "NONE", 0)
+  explored = set()
 
-  state = (problem.getStartState(), "NONE", 0)
-
-  path = [state]
+  path = [startTriple]
 
   def cost(path, atype):
       if atype == "dfs":
           cost = 1. / len(path)
       elif atype == "bfs":
           cost = len(path)
+      elif atype == "ucs":
+          actions = [d for s, d, w in path if d != "NONE"]
+          cost = problem.getCostOfActions(actions)
+      elif atype == "astar":
+          actions = [d for s, d, w in path if d != "NONE"]
+          distance = heuristic(path[-1][0], problem)
+          cost = problem.getCostOfActions(actions) + distance
+      else:
+          raise "Algorith type not recognised."
       return cost
 
   frontier.push(path, cost(path, atype))
   while frontier.isEmpty() == False:
       p = frontier.pop()
       s = p[-1]
-      visited.append(s[0])
-      if problem.isGoalState(s[0]):
-          return [d for s, d, w in p if d != "NONE"]
-      for a in problem.getSuccessors(s[0]):
-          if a[0] not in visited:
+      state = s[0]
+
+      if problem.isGoalState(state):
+          actions = [step[1] for step in p if step[1] != "NONE"]
+          return actions
+
+      explored.add(state)
+      for a in problem.getSuccessors(state):
+          if a[0] not in explored:
               np = p + [a]
               frontier.push(np, cost(np, atype))
   return None
@@ -114,10 +126,6 @@ def depthFirstSearch(problem):
   print "Start's successors:", problem.getSuccessors(problem.getStartState())
   """
   "*** YOUR CODE HERE ***"
-  print "Start:", problem.getStartState()
-  print "Is the start a goal?", problem.isGoalState(problem.getStartState())
-  print "Start's successors:", problem.getSuccessors(problem.getStartState())
-
   return treeSearch(problem, "dfs")
 
 def breadthFirstSearch(problem):
@@ -131,7 +139,7 @@ def breadthFirstSearch(problem):
 def uniformCostSearch(problem):
   "Search the node of least total cost first. "
   "*** YOUR CODE HERE ***"
-  util.raiseNotDefined()
+  return treeSearch(problem, "ucs")
 
 def nullHeuristic(state, problem=None):
   """
@@ -143,7 +151,7 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
   "Search the node that has the lowest combined cost and heuristic first."
   "*** YOUR CODE HERE ***"
-  util.raiseNotDefined()
+  return treeSearch(problem, "astar", heuristic)
 
 
 # Abbreviations
