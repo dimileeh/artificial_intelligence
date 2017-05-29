@@ -278,7 +278,6 @@ class CornersProblem(search.SearchProblem):
     self.startState = (
             self.startingPosition,
             tuple() # goals visited
-            #,[] #  explored
     )
     self.goal = 4
     self.costFn = costFn

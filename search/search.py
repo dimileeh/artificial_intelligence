@@ -102,11 +102,12 @@ def treeSearch(problem, atype, heuristic=None):
           actions = [step[1] for step in p if step[1] != "NONE"]
           return actions
 
-      explored.add(state)
-      for a in problem.getSuccessors(state):
-          if a[0] not in explored:
-              np = p + [a]
-              frontier.push(np, cost(np, atype))
+      if state not in explored:
+          explored.add(state)
+          for a in problem.getSuccessors(state):
+              if a[0] not in explored:
+                  np = p + [a]
+                  frontier.push(np, cost(np, atype))
   return None
 
 def depthFirstSearch(problem):
