@@ -75,9 +75,25 @@ class SelectorBIC(ModelSelector):
         :return: GaussianHMM object
         """
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-
+        minBIC = float("inf")
+        bestModel = None
         # TODO implement model selection based on BIC scores
-        raise NotImplementedError
+        for num_states in range(self.min_n_components, self.max_n_components + 1):
+            try:
+                hmm_model = self.base_model(num_states)
+                if hmm_model:
+                    logL = hmm_model.score(self.X, self.lengths)
+                    d = hmm_model.n_features
+                    p = num_states ** 2 + 2 * num_states * d - 1
+                    bic = -2 * logL + p * math.log(num_states)
+                    if bic < minBIC:
+                        minBIC = bic
+                        bestModel = hmm_model
+            except:
+                pass
+        return bestModel
+            
+            
 
 
 class SelectorDIC(ModelSelector):
@@ -93,16 +109,78 @@ class SelectorDIC(ModelSelector):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
         # TODO implement model selection based on DIC scores
-        raise NotImplementedError
+        maxDIC = float("-inf")
+        bestModel = None
+
+        for num_states in range(self.min_n_components, self.max_n_components + 1):
+            try:
+                hmm_model = self.base_model(num_states)
+                if hmm_model:
+                    logL = hmm_model.score(self.X, self.lengths)
+
+                    sum_scores = 0
+                    for word in self.words:
+                        if word != self.this_word:
+                            X, lengths = self.hwords[word]
+                            sum_scores += hmm_model.score(X, lengths)
+                    
+                    dic = logL - 1 / (len(self.words) - 1) * sum_scores
+                    if dic > maxDIC:
+                        maxDIC = dic
+                        bestModel = hmm_model
+            except:
+                pass
+
+        return bestModel
+
 
 
 class SelectorCV(ModelSelector):
     ''' select best model based on average log Likelihood of cross-validation folds
 
     '''
+    def cv_model(self, num_states, X, lengths):
+        # with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        # warnings.filterwarnings("ignore", category=RuntimeWarning)
+        try:
+            hmm_model = GaussianHMM(n_components=num_states, covariance_type="diag", n_iter=1000,
+                                    random_state=self.random_state, verbose=False).fit(X, lengths)
+            if self.verbose:
+                print("model created for {} with {} states".format(self.this_word, num_states))
+            return hmm_model
+        except:
+            if self.verbose:
+                print("failure on {} with {} states".format(self.this_word, num_states))
+            return None
 
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
         # TODO implement model selection using CV
-        raise NotImplementedError
+        split_method = KFold()
+        bestModel = None
+        bestLogL = float("-inf")
+        for num_states in range(self.min_n_components, self.max_n_components + 1):
+            logLs = []
+            avgLogL = float("-inf")
+            if len(self.sequences) < 3: # some words in our list have fewer than 3 sequences
+                hmm_model = self.cv_model(num_states, *combine_sequences([0], self.sequences))
+                if hmm_model:
+                    logL = hmm_model.score(*combine_sequences([1], self.sequences))
+                    logLs.append(logL)
+            else:
+                for cv_train_idx, cv_test_idx in split_method.split(self.sequences):
+                    hmm_model = self.cv_model(num_states, *combine_sequences(cv_train_idx, self.sequences))
+                    if hmm_model:
+                        logL = hmm_model.score(*combine_sequences(cv_test_idx, self.sequences))
+                        logLs.append(logL)
+            if len(logLs): 
+                avgLogL = np.mean(logLs)
+            if avgLogL > bestLogL and hmm_model:
+                bestLogL = avgLogL
+                bestModel = hmm_model
+        return bestModel
+                
+
+    

@@ -22,4 +22,24 @@ def recognize(models: dict, test_set: SinglesData):
     guesses = []
     # TODO implement the recognizer
     # return probabilities, guesses
-    raise NotImplementedError
+    sequences = test_set.get_all_sequences()
+    Xlengths = test_set.get_all_Xlengths()
+
+    for ix in range(test_set.num_items):
+        word_probs = dict()
+        max_prob = float("-inf")
+        word_predict = None
+        X, lengths = test_set.get_item_Xlengths(ix)
+        for word, model in models.items():
+            try:
+                word_probs[word] = model.score(X, lengths)
+                if word_probs[word] > max_prob:
+                    max_prob = word_probs[word]
+                    word_predict = word
+            except:
+                word_probs[word] = float("-inf")
+
+        probabilities.append(word_probs)
+        guesses.append(word_predict)
+    
+    return probabilities, guesses
